@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>归并排序 极简可输入版</title>
+<style>
+body{font-family:微软雅黑;text-align:center;background:#f5f7fa;padding:20px;}
+.box{margin:20px 0;}
+input{width:300px;padding:8px;font-size:16px;}
+button{padding:8px 15px;margin:3px;font-size:15px;border:none;border-radius:4px;background:#3498db;color:#fff;cursor:pointer;}
+button:disabled{background:#ccc;}
+.array{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:30px 0;}
+.item{width:50px;height:50px;line-height:50px;border-radius:6px;color:#fff;font-size:18px;font-weight:bold;background:#3498db;}
+.split{background:#f39c12;}
+.merge{background:#2ecc71;}
+.sorted{background:#9b59b6;}
+.info{font-size:18px;color:#e74c3c;font-weight:bold;}
+</style>
+</head>
+<body>
+<h2>归并排序</h2>
+
+<div class="box">
+    <input id="inp" placeholder="直接输：11,23,2,19">
+    <button onclick="setArr()">确定输入</button>
+    <button onclick="randArr()">随机数组</button>
+</div>
+
+<div class="box">
+    <button onclick="autoRun()">自动播放</button>
+    <button onclick="manualRun()">手动分步</button>
+    <button onclick="next()">下一步</button>
+    <button onclick="resetAll()">重置</button>
+</div>
+
+<div class="info" id="info">等待操作</div>
+<div class="array" id="view"></div>
+
+<script>
+let arr = [];
+let steps = [];
+let cur = 0;
+let timer = null;
+
+// 输入数组 
+function setArr(){
+    let s = document.getElementById('inp').value;
+    arr = s.split(',').map(x=>parseInt(x.trim()));
+    render(arr,"已加载自定义数组");
+    steps = []; cur = 0;
+}
+
+// 随机数组
+function randArr(){
+    arr = [9,4,7,2,6,1,8,3];
+    render(arr,"已加载随机数组");
+    steps = []; cur = 0;
+}
+
+// 渲染
+function render(a,tip,type=''){
+    document.getElementById('info').innerText = tip;
+    let html = '';
+    a.forEach(n=>html += `<div class="item ${type}">${n}</div>`);
+    document.getElementById('view').innerHTML = html;
+}
+
+// 生成归并所有步骤
+function genSteps(a){
+    let st = [];
+    function mergeSort(x){
+        if(x.length<=1) return x;
+        let m = Math.floor(x.length/2);
+        let L = x.slice(0,m);
+        let R = x.slice(m);
+        st.push({type:'split',now:[...x],left:L,right:R});
+        let Ls = mergeSort(L);
+        let Rs = mergeSort(R);
+        let res = merge(Ls,Rs);
+        st.push({type:'merge',now:res,left:Ls,right:Rs});
+        return res;
+    }
+    function merge(x,y){
+        let res=[],i=0,j=0;
+        while(i<x.length&&j<y.length) res.push(x[i]<=y[j]?x[i++]:y[j++]);
+        return res.concat(x.slice(i)).concat(y.slice(j));
+    }
+    let final = mergeSort([...a]);
+    st.push({type:'end',now:final});
+    return st;
+}
+
+// 自动播放
+function autoRun(){
+    if(arr.length<2){randArr();}
+    clearInterval(timer);
+    steps = genSteps(arr);
+    cur = 0;
+    timer = setInterval(()=>{
+        if(cur>=steps.length){clearInterval(timer);return;}
+        showStep();
+        cur++;
+    },800);
+}
+
+// 手动模式初始化
+function manualRun(){
+    if(arr.length<2){randArr();}
+    clearInterval(timer);
+    steps = genSteps(arr);
+    cur = 0;
+    document.getElementById('info').innerText = '手动模式，点下一步';
+}
+
+// 下一步
+function next(){
+    if(cur>=steps.length) return;
+    showStep();
+    cur++;
+}
+
+// 展示当前一步
+function showStep(){
+    let s = steps[cur];
+    if(s.type==='split'){
+        render(s.now,`拆分：${s.now.join(',')} 分为 左${s.left} 右${s.right}`,'split');
+    }else if(s.type==='merge'){
+        render(s.now,`合并：${s.left} + ${s.right} → ${s.now}`,'merge');
+    }else if(s.type==='end'){
+        render(s.now,'排序完成','sorted');
+    }
+}
+
+// 重置
+function resetAll(){
+    clearInterval(timer);
+    arr=[];steps=[];cur=0;
+    document.getElementById('info').innerText='等待操作';
+    document.getElementById('view').innerHTML='';
+    document.getElementById('inp').value='';
+}
+</script>
+</body>
+</html>
